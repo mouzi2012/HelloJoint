@@ -10,6 +10,7 @@ public:
 	~DataReader();
 public:
 	void SetTarget(const char* name);
+	void InitFbxData();
 private:
 	char m_target[NAMEL];
 	FbxManager* m_manager;
