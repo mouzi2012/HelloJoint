@@ -25,7 +25,6 @@ private:
 	FbxScene* m_scene;
 // the fbx detail data
 	AniBone* m_bones;
-	AniMaterial* m_material;	
 	AniVertexInfo* m_vertexInfo;
 };
 #endif

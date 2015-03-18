@@ -10,7 +10,6 @@ DataReader::DataReader()
 	m_scene = NULL;
 
 	m_bones = NULL;
-	m_material = NULL;	
 	m_vertexInfo = NULL;
 }
 DataReader::~DataReader()
@@ -89,6 +88,85 @@ void DataReader::ParseBone()
 }
 void DataReader::ParseVertex()
 {
+	FbxNode* lRootNode = m_scene->GetRootNode();
+	if(!lRootNode)
+	{
+	  printf("can not find root\n");
+	  return;
+	}
+	FbxMesh* pMesh = lRootNode->GetMesh();
+	if(!pMesh)
+	{
+		printf("no mesh find!!");
+		return;
+	}	
+	
+	int triangleCount = pMesh->GetPolygonCount();
+	int vertexCounter = 0;
+	m_vertexInfo = new AniVertexInfo();
+	AniVertex* pVertex=new AniVertex[triangleCount*3];
+	m_vertexInfo->vertex = pVertex;
+	int uvSize = triangleCount*6;
+	float* pUV =new float[uvSize];
+	m_vertexInfo->vertexUV = pUV;
+	m_vertexInfo->vertexUVSize = uvSize;
+
+	FbxVector4* pCtrlPoint = pMesh->GetControlPoints();
+	for(int i = 0 ; i < triangleCount ; ++i)
+	{
+		for(int j = 0 ; j < 3 ; ++j)
+		{
+			//read the vertex data
+			int ctrlPointIndex = pMesh->GetPolygonVertex(i , j);
+			float x=pCtrlPoint[ctrlPointIndex].mData[0];
+			float y=pCtrlPoint[ctrlPointIndex].mData[1];
+			float z=pCtrlPoint[ctrlPointIndex].mData[2];
+			(pVertex+vertexCounter)->SetPoint(x,y,z);
+			//end vertex data
+			//read the uv data
+			if(pMesh->GetElementUVCount() < 1 )
+			{
+				printf("can not find the uv\n");
+				return ;
+			}
+			FbxGeometryElementUV* pVertexUV = pMesh->GetElementUV(0);
+			const bool lUseIndex = pVertexUV->GetReferenceMode() != FbxGeometryElement::eDirect;
+
+			switch(pVertexUV->GetMappingMode()) 
+			{ 
+			case FbxGeometryElement::eByControlPoint:
+				{
+					if(!lUseIndex)
+					{
+						*(pUV+vertexCounter*2) = pVertexUV->GetDirectArray().GetAt(ctrlPointIndex).mData[0]; 
+						*(pUV+vertexCounter*2+1) = pVertexUV->GetDirectArray().GetAt(ctrlPointIndex).mData[1]; 
+					}
+					else
+					{
+						int id = pVertexUV->GetIndexArray().GetAt(ctrlPointIndex);
+						*(pUV+vertexCounter*2) = pVertexUV->GetDirectArray().GetAt(id).mData[0]; 
+						*(pUV+vertexCounter*2+1) = pVertexUV->GetDirectArray().GetAt(id).mData[1];
+
+					}
+
+				}
+				break;
+			case FbxGeometryElement::eByPolygonVertex:
+				{
+					int index = pMesh->GetTextureUVIndex(i, j);
+					*(pUV+vertexCounter*2) = pVertexUV->GetDirectArray().GetAt(index).mData[0];
+					*(pUV+vertexCounter*2+1) = pVertexUV->GetDirectArray().GetAt(index).mData[1]; 
+				}
+				break;
+				//we just handle two condition!!!
+			default:
+				break;
+			}
+			//end uv data
+			vertexCounter++; 
+		}
+	}
+	//we not finish the  vertex bone data yet!!!
 }
 void DataReader::ParseMaterial()
 {
