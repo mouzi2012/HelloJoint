@@ -60,7 +60,7 @@ public:
 	~AniVertexInfo()
 	{
 		delete [] vertex;
-		delete [] vertexIndex;
+//		delete [] vertexIndex;
 		delete [] vertexUV;
 		SetDefault();
 	}
@@ -68,8 +68,8 @@ public:
 	{
 		vertex = NULL;
 		vertexSize = 0;
-		vertexIndex = NULL;
-		vertexIndexSize = 0;
+	//	vertexIndex = NULL;
+	//	vertexIndexSize = 0;
 		material = NULL;
 		vertexUV = NULL;
 		vertexUVSize = 0;
@@ -80,8 +80,8 @@ public:
 public:
 	AniVertex* vertex;
 	int vertexSize;
-	int* vertexIndex;
-	int vertexIndexSize;
+	//int* vertexIndex;
+	//int vertexIndexSize;
 	AniMaterial* material;
 	float* vertexUV;
 	int vertexUVSize;

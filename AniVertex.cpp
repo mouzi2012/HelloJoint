@@ -84,16 +84,16 @@ void AniVertexInfo::AddMaterial(AniMaterial* pAniMaterial)
 }
 void AniVertexInfo::AssambleVertexData()
 {
-	for(int i=0;i < vertexIndexSize;++i)
+	for(int i=0;i < vertexSize;++i)
 	{
 		int index = -1;
 		bool find = false;
 		for(int k=0;k < (int)vertexForWrite.size();++k)
 		{
 			if(
-				is_near((vertex+*(vertexIndex+i))->GetX(),vertexForWrite[k]->GetX())&&
-				is_near((vertex+*(vertexIndex+i))->GetY(),vertexForWrite[k]->GetY())&&
-				is_near((vertex+*(vertexIndex+i))->GetZ(),vertexForWrite[k]->GetZ())&&
+				is_near((vertex+i)->GetX(),vertexForWrite[k]->GetX())&&
+				is_near((vertex+i)->GetY(),vertexForWrite[k]->GetY())&&
+				is_near((vertex+i)->GetZ(),vertexForWrite[k]->GetZ())&&
 				is_near(*(vertexUV+i*2),UVForWrite[k*2])&&
 				is_near(*(vertexUV+i*2+1),UVForWrite[k*2+1])
 			){
@@ -108,7 +108,8 @@ void AniVertexInfo::AssambleVertexData()
 		}
 		else
 		{
-			vertexForWrite.push_back(vertex+*(vertexIndex+i));
+			//vertexForWrite.push_back(vertex+*(vertexIndex+i));
+			vertexForWrite.push_back(vertex+i);
 			UVForWrite.push_back(*(vertexUV+i*2));
 			UVForWrite.push_back(*(vertexUV+i*2+1));
 			triangleIndex.push_back(vertexForWrite.size()-1);
