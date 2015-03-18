@@ -1,9 +1,17 @@
 #include "DataReader.h"
+#include "AniBone.h"
+#include "AniMaterial.h"
+#include "AniVertex.h"
+
 DataReader::DataReader()
 {
 	memset(m_target,0,sizeof(m_target));
 	m_manager = NULL;
 	m_scene = NULL;
+
+	m_bones = NULL;
+	m_material = NULL;	
+	m_vertexInfo = NULL;
 }
 DataReader::~DataReader()
 {
@@ -70,3 +78,18 @@ void DataReader::InitFbxData()
 	
 }
 
+void DataReader::StartParse()
+{
+	ParseBone();
+	ParseVertex();
+	ParseMaterial();
+}
+void DataReader::ParseBone()
+{
+}
+void DataReader::ParseVertex()
+{
+}
+void DataReader::ParseMaterial()
+{
+}
