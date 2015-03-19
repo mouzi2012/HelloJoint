@@ -99,10 +99,30 @@ void DataReader::ReadBone()
 //reade bone animation is about the bone bind position and the other move
 void DataReader::ReadBoneAni()
 {
+	FbxCluster::ELinkMode lClusterMode = ((FbxSkin*)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(0)->GetLinkMode();
+	int lSkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+	for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex)
+	{
+		FbxSkin * lSkinDeformer = (FbxSkin *)pMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
+		int lClusterCount = lSkinDeformer->GetClusterCount();
+		for ( int lClusterIndex=0; lClusterIndex<lClusterCount; ++lClusterIndex)
+		{
+			FbxCluster* lCluster = lSkinDeformer->GetCluster(lClusterIndex);
+			if (!lCluster->GetLink())
+				continue;
+			FbxAMatrix lVertexTransformMatrix;
+
+		}
+	}
 }
 FbxNode* DataReader::GetRootBone()
 {
 	FbxNode* lRootNode = m_scene->GetRootNode();
+	if(!lRootNode)
+	{
+	  printf("can not find root\n");
+	  return NULL;
+	}
 	for(int i = 0; i < lRootNode->GetChildCount();++i)
 	{
 		FbxNode* child = lRootNode->GetChild(i);
@@ -124,6 +144,7 @@ FbxNode* DataReader::GetRootBone()
 }
 void DataReader::ConnectBone2Vertex()
 {
+	FbxNode* lRootNode = m_scene->GetRootNode();
 	FbxMesh* pMesh = lRootNode->GetMesh();
 	int lVertexCount = pMesh->GetControlPointsCount();
 	m_index2bone.resize(lVertexCount);
@@ -151,8 +172,14 @@ void DataReader::ConnectBone2Vertex()
 				}
 				m_index2bone[lIndex].index = lIndex;
 				//this is not right!!!!
-				m_index2bone[lIndex].bones= pBone;
-				m_index2bone[lIndex].boneFactors= lWeight;
+				AniBone* pAniBone = m_bone->FindBone(pBone);
+				if(pAniBone == NULL)
+				{
+					printf("can not find the anibone!!!");
+					return;
+				}
+				m_index2bone[lIndex].bones.push_back(pAniBone);
+				m_index2bone[lIndex].boneFactors.push_back(lWeight);
 			}
 		}
 	}
@@ -192,9 +219,9 @@ void DataReader::ParseVertex()
 			float y=pCtrlPoint[ctrlPointIndex].mData[1];
 			float z=pCtrlPoint[ctrlPointIndex].mData[2];
 			(pVertex+vertexCounter)->SetPoint(x,y,z);
-			for(int k = 0; k < m_index2bone[ctrlPointIndex].size();++k)
+			for(int k = 0; k < (int)m_index2bone[ctrlPointIndex].bones.size();++k)
 			{
-				(pVertex+vertexCount)->AddBone(m_index2bone[ctrlPointIndex].bones[k],
+				(pVertex+vertexCounter)->AddBone(m_index2bone[ctrlPointIndex].bones[k],
 											   m_index2bone[ctrlPointIndex].boneFactors[k]);
 			}
 
