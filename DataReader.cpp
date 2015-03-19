@@ -9,7 +9,7 @@ DataReader::DataReader()
 	m_manager = NULL;
 	m_scene = NULL;
 
-	m_bones = NULL;
+	m_bone = NULL;
 	m_vertexInfo = NULL;
 }
 DataReader::~DataReader()
@@ -80,11 +80,82 @@ void DataReader::InitFbxData()
 void DataReader::StartParse()
 {
 	ParseBone();
+	//we here first find ctrlpt bones
+	ConnectBone2Vertex();
 	ParseVertex();
 	ParseMaterial();
 }
 void DataReader::ParseBone()
 {
+	ReadBone();
+	ReadBoneAni();
+}
+void DataReader::ReadBone()
+{
+	FbxNode* pRootBone =GetRootBone();
+	m_bone = new AniBone();
+	m_bone->BuildTree(pRootBone,true);	
+}
+//reade bone animation is about the bone bind position and the other move
+void DataReader::ReadBoneAni()
+{
+}
+FbxNode* DataReader::GetRootBone()
+{
+	FbxNode* lRootNode = m_scene->GetRootNode();
+	for(int i = 0; i < lRootNode->GetChildCount();++i)
+	{
+		FbxNode* child = lRootNode->GetChild(i);
+		bool isBone = false;
+		for(int j = 0;j < child->GetNodeAttributeCount(); ++j)
+		{
+			if(child->GetNodeAttributeByIndex(i)->GetAttributeType() == FbxNodeAttribute::eSkeleton)
+			{
+				isBone =true;
+				break;
+			}
+		}
+		if(isBone)
+		{
+			return child;
+		}
+	}
+	return NULL;
+}
+void DataReader::ConnectBone2Vertex()
+{
+	FbxMesh* pMesh = lRootNode->GetMesh();
+	int lVertexCount = pMesh->GetControlPointsCount();
+	m_index2bone.resize(lVertexCount);
+	int lSkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+	for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex)
+	{
+		FbxSkin * lSkinDeformer = (FbxSkin *)pMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
+		int lClusterCount = lSkinDeformer->GetClusterCount();
+		for ( int lClusterIndex=0; lClusterIndex<lClusterCount; ++lClusterIndex)
+		{
+			FbxCluster* lCluster = lSkinDeformer->GetCluster(lClusterIndex);
+			FbxNode* pBone = lCluster->GetLink();
+			if (!pBone)
+				continue;
+			int lVertexIndexCount = lCluster->GetControlPointIndicesCount();
+			for (int k = 0; k < lVertexIndexCount; ++k) 
+			{
+				int lIndex = lCluster->GetControlPointIndices()[k];
+				if (lIndex >= lVertexCount)
+					continue;
+				double lWeight = lCluster->GetControlPointWeights()[k];
+				if (lWeight == 0.0)
+				{
+					continue;
+				}
+				m_index2bone[lIndex].index = lIndex;
+				//this is not right!!!!
+				m_index2bone[lIndex].bones= pBone;
+				m_index2bone[lIndex].boneFactors= lWeight;
+			}
+		}
+	}
 }
 void DataReader::ParseVertex()
 {
@@ -110,7 +181,6 @@ void DataReader::ParseVertex()
 	float* pUV =new float[uvSize];
 	m_vertexInfo->vertexUV = pUV;
 	m_vertexInfo->vertexUVSize = uvSize;
-
 	FbxVector4* pCtrlPoint = pMesh->GetControlPoints();
 	for(int i = 0 ; i < triangleCount ; ++i)
 	{
@@ -122,6 +192,12 @@ void DataReader::ParseVertex()
 			float y=pCtrlPoint[ctrlPointIndex].mData[1];
 			float z=pCtrlPoint[ctrlPointIndex].mData[2];
 			(pVertex+vertexCounter)->SetPoint(x,y,z);
+			for(int k = 0; k < m_index2bone[ctrlPointIndex].size();++k)
+			{
+				(pVertex+vertexCount)->AddBone(m_index2bone[ctrlPointIndex].bones[k],
+											   m_index2bone[ctrlPointIndex].boneFactors[k]);
+			}
+
 			//end vertex data
 			//read the uv data
 			if(pMesh->GetElementUVCount() < 1 )
