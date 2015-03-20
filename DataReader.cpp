@@ -2,7 +2,20 @@
 #include "AniBone.h"
 #include "AniMaterial.h"
 #include "AniVertex.h"
-
+FbxAMatrix GetGeometry(FbxNode* pNode)
+{
+	const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
+	const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
+	const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+	return FbxAMatrix(lT, lR, lS);
+}
+FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
+{
+	FbxAMatrix lPoseMatrix;
+	FbxMatrix lMatrix = pPose->GetMatrix(pNodeIndex);
+	memcpy((double*)lPoseMatrix, (double*)lMatrix, sizeof(lMatrix.mData));
+	return lPoseMatrix;
+}
 DataReader::DataReader()
 {
 	memset(m_target,0,sizeof(m_target));
@@ -99,8 +112,30 @@ void DataReader::ReadBone()
 //reade bone animation is about the bone bind position and the other move
 void DataReader::ReadBoneAni()
 {
+	FbxNode* lRootNode = m_scene->GetRootNode();
+	FbxMesh* pMesh = lRootNode->GetMesh();
+	const int lPoseCount = m_scene->GetPoseCount();
+	FbxPose* pPose = m_scene->GetPose(0);
+	if(pPose->IsBindPose())
+	{
+		printf("find bind yes\n");
+	}
+
 	FbxCluster::ELinkMode lClusterMode = ((FbxSkin*)pMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(0)->GetLinkMode();
 	int lSkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+	FbxArray<FbxString*> mAnimStackNameArray;
+	m_scene->FillAnimStackNameArray(mAnimStackNameArray);
+	FbxTakeInfo* lCurrentTakeInfo = m_scene->GetTakeInfo(*(mAnimStackNameArray[0]));  
+	FbxTime mFrameTime, mStart, mStop, mCurrentTime;
+
+	if(!lCurrentTakeInfo)
+	{
+		printf("no time info found");
+		return;
+	}
+	mStart = lCurrentTakeInfo->mLocalTimeSpan.GetStart();
+	mStop = lCurrentTakeInfo->mLocalTimeSpan.GetStop();
+	mFrameTime.SetTime(0, 0, 0, 1, 0, m_scene->GetGlobalSettings().GetTimeMode());
 	for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex)
 	{
 		FbxSkin * lSkinDeformer = (FbxSkin *)pMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
@@ -108,10 +143,86 @@ void DataReader::ReadBoneAni()
 		for ( int lClusterIndex=0; lClusterIndex<lClusterCount; ++lClusterIndex)
 		{
 			FbxCluster* lCluster = lSkinDeformer->GetCluster(lClusterIndex);
-			if (!lCluster->GetLink())
+			FbxNode* pBone = lCluster->GetLink();
+			if (!pBone)
 				continue;
+			AniBone* pAniBone = m_bone->FindBone(pBone);
+			if(pAniBone == NULL)
+			{
+				printf("can not find the anibone!!!");
+				return;
+			}
 			FbxAMatrix lVertexTransformMatrix;
 
+			FbxAMatrix lReferenceGlobalInitPosition;
+			FbxAMatrix lReferenceGlobalCurrentPosition;
+			FbxAMatrix lClusterGlobalInitPosition;
+			FbxAMatrix lClusterGlobalCurrentPosition;
+			FbxAMatrix lReferenceGeometry;
+			FbxAMatrix lAssociateGeometry;
+			FbxAMatrix lClusterGeometry;
+			
+			FbxAMatrix offsetMatrix;
+			FbxAMatrix localMatrix;
+			FbxAMatrix globalMatrix;
+			FbxAMatrix outputMatrix;
+
+			lCluster->GetTransformMatrix(lReferenceGlobalInitPosition);
+//				lReferenceGlobalCurrentPosition = pGlobalPosition;
+			
+			lReferenceGeometry = GetGeometry(pMesh->GetNode());
+			lReferenceGlobalInitPosition *= lReferenceGeometry;
+
+			lCluster->GetTransformLinkMatrix(lClusterGlobalInitPosition);
+			offsetMatrix = lClusterGlobalInitPosition.Inverse() * lReferenceGlobalInitPosition;
+			//we first push the bind matrix!!!
+			int lNodeIndex = pPose->Find(pBone);
+			if (lNodeIndex > -1)
+			{
+				globalMatrix = GetPoseMatrix(pPose, lNodeIndex);	
+				FbxNode* pParent = pBone->GetParent();
+				if(!pParent)
+				{
+					localMatrix.SetIdentity();
+				}
+				else
+				{
+					int lParentNodeIndex = pPose->Find(pParent);
+					if(lParentNodeIndex > -1)
+					{
+						localMatrix = GetPoseMatrix(pPose,lParentNodeIndex).Inverse()*globalMatrix;
+					}
+					else
+					{
+						localMatrix.SetIdentity();
+					}
+				}
+				outputMatrix = globalMatrix * offsetMatrix;
+			}
+			else
+			{
+				printf("error happen can not find bind pose \n");
+			}
+			//push bind matrix end
+			//we push the animation matrix
+			mCurrentTime = mStart;
+			for(;mCurrentTime < mStop;)
+			{
+
+				globalMatrix = pBone->EvaluateGlobalTransform(mCurrentTime);
+				FbxNode* pParent = pBone->GetParent();
+				if(!pParent)
+				{
+					localMatrix.SetIdentity();
+				}
+				else
+				{
+					localMatrix = pParent->EvaluateGlobalTransform(mCurrentTime).Inverse()*globalMatrix;
+				}
+				outputMatrix = globalMatrix * offsetMatrix;
+				mCurrentTime += mFrameTime;
+			}
+			//push animation matrix end
 		}
 	}
 }
