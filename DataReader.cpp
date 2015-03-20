@@ -16,6 +16,18 @@ FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
 	memcpy((double*)lPoseMatrix, (double*)lMatrix, sizeof(lMatrix.mData));
 	return lPoseMatrix;
 }
+void FbxAMatrix2GLMMat4(const FbxAMatrix& matrix,glm::mat4& mat4)
+{
+	//this may be getcol but now it is no sure!!!!
+	for(int i=0;i<4;++i)
+	{
+		FbxVector4 col = matrix.GetRow(i);
+		for(int k=0;k<4;++k)
+		{
+			mat4[i][k] = col.mData[k];
+		}
+	}
+}
 DataReader::DataReader()
 {
 	memset(m_target,0,sizeof(m_target));
@@ -166,6 +178,11 @@ void DataReader::ReadBoneAni()
 			FbxAMatrix localMatrix;
 			FbxAMatrix globalMatrix;
 			FbxAMatrix outputMatrix;
+			glm::mat4 offsetMat;
+			glm::mat4 localMat;
+			glm::mat4 globalMat;
+			glm::mat4 outputMat;
+
 
 			lCluster->GetTransformMatrix(lReferenceGlobalInitPosition);
 //				lReferenceGlobalCurrentPosition = pGlobalPosition;
@@ -202,7 +219,21 @@ void DataReader::ReadBoneAni()
 			else
 			{
 				printf("error happen can not find bind pose \n");
+				return;
 			}
+			FbxAMatrix2GLMMat4(offsetMatrix,offsetMat);
+			pAniBone->SetOffsetMatrix(offsetMatrix);
+			pAniBone->SetVertexOffsetMatrix(offsetMat);
+
+			FbxAMatrix2GLMMat4(localMatrix,localMat);
+			FbxAMatrix2GLMMat4(globalMatrix,globalMat);
+			FbxAMatrix2GLMMat4(outputMatrix,outputMat);
+
+			AniMatrix* pAniMatrix = new AniMatrix;
+			pAniMatrix->m_localMatrix = localMat;
+			pAniMatrix->m_globalMatrix = globalMat;
+			pAniMatrix->m_outputMatrix = outputMat;
+			pAniBone->SetBindAniMatrix(pAniMatrix);			
 			//push bind matrix end
 			//we push the animation matrix
 			mCurrentTime = mStart;
@@ -220,9 +251,19 @@ void DataReader::ReadBoneAni()
 					localMatrix = pParent->EvaluateGlobalTransform(mCurrentTime).Inverse()*globalMatrix;
 				}
 				outputMatrix = globalMatrix * offsetMatrix;
+
+				FbxAMatrix2GLMMat4(localMatrix,localMat);
+				FbxAMatrix2GLMMat4(globalMatrix,globalMat);
+				FbxAMatrix2GLMMat4(outputMatrix,outputMat);
+				AniMatrix* pAniMatrix = new AniMatrix;
+				pAniMatrix->m_localMatrix = localMat;
+				pAniMatrix->m_globalMatrix = globalMat;
+				pAniMatrix->m_outputMatrix = outputMat;
+				pAniBone->AddAniMatrix(pAniMatrix);			
+
 				mCurrentTime += mFrameTime;
 			}
-			//push animation matrix end
+				//push animation matrix end
 		}
 	}
 }
