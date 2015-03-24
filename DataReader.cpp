@@ -28,6 +28,13 @@ void FbxAMatrix2GLMMat4(const FbxAMatrix& matrix,glm::mat4& mat4)
 		}
 	}
 }
+void FbxDouble32GLMVec3(glm::vec3& val0,const FbxDouble3& val1)
+{
+	for(int i=0;i<3;++i)
+	{
+		val0[i] = val1.mData[i];
+	}
+}
 DataReader::DataReader()
 {
 	memset(m_target,0,sizeof(m_target));
@@ -425,4 +432,31 @@ void DataReader::ParseVertex()
 }
 void DataReader::ParseMaterial()
 {
+	
+	FbxNode* lRootNode = m_scene->GetRootNode();
+	FbxMesh* pMesh = lRootNode->GetMesh();
+	FbxNode* pNode = pMesh->GetNode();  
+	int materialCount = pNode->GetMaterialCount(); 
+	printf("matetial count is %d\n",materialCount);
+	FbxSurfaceMaterial *lMaterial = pNode->GetMaterial(0);
+	if(lMaterial->GetClassId().Is(FbxSurfacePhong::ClassId))
+	{   
+		printf("yes this is a SurfacePhong \n");
+		FbxSurfacePhong* pPhong =(FbxSurfacePhong*)lMaterial;
+		// need add the matetial to!!       
+		AniMaterial* pMaterial =new AniMaterial;
+		FbxDouble32GLMVec3(pMaterial->Ambient,pPhong->Ambient);
+		FbxDouble32GLMVec3(pMaterial->AmbientFactor,pPhong->AmbientFactor);
+		FbxDouble32GLMVec3(pMaterial->Diffuse,pPhong->Diffuse);
+		FbxDouble32GLMVec3(pMaterial->DiffuseFactor,pPhong->DiffuseFactor);
+		FbxDouble32GLMVec3(pMaterial->Emissive,pPhong->Emissive);
+		FbxDouble32GLMVec3(pMaterial->EmissiveFactor,pPhong->EmissiveFactor);
+		FbxDouble32GLMVec3(pMaterial->Reflection,pPhong->Reflection);
+		FbxDouble32GLMVec3(pMaterial->ReflectionFactor,pPhong->ReflectionFactor);
+		FbxDouble32GLMVec3(pMaterial->Shininess,pPhong->Shininess);
+		FbxDouble32GLMVec3(pMaterial->Specular,pPhong->Specular);
+		FbxDouble32GLMVec3(pMaterial->SpecularFactor,pPhong->SpecularFactor);
+		m_vertexInfo->AddMaterial(pMaterial);
+	}   
+
 }
