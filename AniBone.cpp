@@ -386,6 +386,21 @@ FILE* AniBone::GetFileWriter()
 {
 	return m_fileWriter; 
 }
+
+void AniBone::OpenFileReader()
+{
+	const char* pFileName ="cheqiAniDatas";
+	m_fileReader = fopen (pFileName, "rb");
+}
+void AniBone::CloseFileReader()
+{
+	fclose(m_fileReader);
+}
+FILE* AniBone::GetFileReader()
+{
+	return m_fileReader;
+}
+
 void AniBone::WriteTheHeader(AniDataFileHeader& header)
 {
 	header.headerSize = sizeof(header);

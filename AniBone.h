@@ -102,6 +102,11 @@ public:
 	static void OpenFileWriter();
 	static void CloseFileWriter();
 	static FILE* GetFileWriter();
+
+	static void OpenFileReader();
+	static void CloseFileReader();
+	static FILE* GetFileReader();
+
 	static void WriteTheHeader(AniDataFileHeader& header);
 	static void ReadTheHeader(AniDataFileHeader& header);
 };
