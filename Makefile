@@ -32,7 +32,7 @@ endif
 INCLUDEPATH = /mbackup/mouzi/work/cxx/fbx_converter/glm
 LIBS = $(FBXSDK_LIB) -lm -lrt -luuid -lstdc++ -lpthread -ldl
 
-OBJS        = main.o AniBone.o AniVertex.o AniMaterial.o DataReader.o
+OBJS        = main.o AniBone.o AniVertex.o AniMaterial.o AniDataFileManager.o DataReader.o
 
 
 firstFBX: $(OBJS)

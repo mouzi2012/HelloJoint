@@ -18,7 +18,7 @@ FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
 }
 void FbxAMatrix2GLMMat4(const FbxAMatrix& matrix,glm::mat4& mat4)
 {
-	//this may be getcol but now it is no sure!!!!
+	//this may be getcol but now it is not sure!!!!
 	for(int i=0;i<4;++i)
 	{
 		FbxVector4 col = matrix.GetRow(i);
@@ -28,11 +28,12 @@ void FbxAMatrix2GLMMat4(const FbxAMatrix& matrix,glm::mat4& mat4)
 		}
 	}
 }
-void FbxDouble32GLMVec3(glm::vec3& val0,const FbxDouble3& val1)
+//cast from FbxDouble to FbxDouble3 may have bad effects not sure now!!
+void FbxDouble32GLMVec3(glm::vec3& val0,const FbxPropertyT< FbxDouble3 >& val1)
 {
 	for(int i=0;i<3;++i)
 	{
-		val0[i] = val1.mData[i];
+		val0[i] = val1.Get().mData[i];
 	}
 }
 DataReader::DataReader()
