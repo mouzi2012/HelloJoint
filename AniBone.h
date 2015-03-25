@@ -33,8 +33,8 @@ public:
 public:
 	enum VisitTypeEnum {VisitGenerateId=0,VisitWriteToFile,VisitEnd};
 	void GenerateAllId();
-	void WriteAllBoneToFile();
-	void ReadAllBoneFromFile();
+	void WriteAllBoneToFile(FILE* pfile);
+	void ReadAllBoneFromFile(FILE* pfile);
 	int GetBoneId();
 public:
 	void SetVertexOffsetMatrix(const glm::mat4& mat);
@@ -45,12 +45,12 @@ public:
 public:
 	AniBone* GetParent();
 protected:
-	void VisitAllBone(VisitTypeEnum visit=VisitEnd);
+	void VisitAllBone(VisitTypeEnum visit=VisitEnd,void* extra=NULL);
 	void GenerateBoneId();
-	void WriteBoneToFile();
-	void WriteAniFrameData();
-	void ReadBoneFromFile();
-	void ReadAniFrameData();
+	void WriteBoneToFile(FILE* pfile);
+	void WriteAniFrameData(FILE* pfile);
+	void ReadBoneFromFile(FILE* pfile);
+	void ReadAniFrameData(FILE* pfile);
 
 	void SetRoot(bool root);
 	// if we build tree from file we need find function
@@ -93,21 +93,9 @@ private:
 	// all this should managed by system resource manager!!
 	static int m_idGenerator;
 	static AniBone* m_rootBone;
-	static FILE* m_fileReader;
-	static FILE* m_fileWriter;
 public:
 	static void InitStaticData();
 	static AniBone* GetRootBone();
 
-	static void OpenFileWriter();
-	static void CloseFileWriter();
-	static FILE* GetFileWriter();
-
-	static void OpenFileReader();
-	static void CloseFileReader();
-	static FILE* GetFileReader();
-
-	static void WriteTheHeader(AniDataFileHeader& header);
-	static void ReadTheHeader(AniDataFileHeader& header);
 };
 #endif

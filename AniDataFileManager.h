@@ -6,6 +6,7 @@
 
 class AniBone;
 class AniVertexInfo;
+struct AniDataFileHeader;
 class AniDataFileManager
 {
 public:
@@ -20,6 +21,9 @@ public:
 	
 	void OpenFileType(int type);
 	void CloseFileType(int type);
+protected:
+	void WriteTheHeader(AniDataFileHeader& header,FILE* pfile);
+	void ReadTheHeader(AniDataFileHeader& header,FILE* pfile);
 private:
 	enum EManagerType {EWriter=0,EReader};
 	static const int nSize=256;

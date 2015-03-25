@@ -1,4 +1,7 @@
 #include "AniDataFileManager.h"
+#include "AniBone.h"
+#include "AniVertex.h"
+
 AniDataFileManager::AniDataFileManager()
 {
 	memset(m_file,0,sizeof(FILE*)*(EReader+1));
@@ -28,12 +31,23 @@ void AniDataFileManager::CloseFileType(int type)
 
 void AniDataFileManager::WriteDataToFile(AniBone* pBone,AniVertexInfo* pVertexInfo)
 {
+
 }
 void AniDataFileManager::ReadDataFromFile(AniBone*& pBone,AniVertexInfo*& pVertexInfo)
 {
+	
 }
 
 void AniDataFileManager::SetFileName(int type,char* name)
 {
 	strcpy(m_name[type],name);
+}
+void AniDataFileManager::WriteTheHeader(AniDataFileHeader& header,FILE* pfile)
+{
+	header.headerSize = sizeof(header);
+	fwrite(&header,sizeof(header),1,pfile);
+}
+void AniDataFileManager::ReadTheHeader(AniDataFileHeader& header,FILE* pfile)
+{
+	fread(&header,sizeof(header),1,pfile);
 }

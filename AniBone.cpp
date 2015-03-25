@@ -2,8 +2,6 @@
 #include "AniVertex.h"
 int AniBone::m_idGenerator=0;
 AniBone* AniBone::m_rootBone=NULL;
-FILE* AniBone::m_fileReader=NULL;
-FILE* AniBone::m_fileWriter=NULL;
 
 float* GetGlmMat4Buffer(const glm::mat4& mat,float* pBuffer)
 {
@@ -112,8 +110,8 @@ const FbxAMatrix& AniBone::GetOffsetMatrix()
 }
 #endif
 
-
-void AniBone::VisitAllBone(VisitTypeEnum visit)
+//ugly but working
+void AniBone::VisitAllBone(VisitTypeEnum visit,void* extra)
 {
 	if(visit == VisitEnd)
 	{
@@ -129,7 +127,8 @@ void AniBone::VisitAllBone(VisitTypeEnum visit)
 		break;
 	case VisitWriteToFile:
 		{
-			WriteBoneToFile();
+			FILE* pfile = (FILE*)extra;
+			WriteBoneToFile(pfile);
 		}
 		break;
 
@@ -138,12 +137,12 @@ void AniBone::VisitAllBone(VisitTypeEnum visit)
 	}
 	for(int i = 0;i < (int)m_childs.size();++i)
 	{
-		m_childs[i]->VisitAllBone(visit);
+		m_childs[i]->VisitAllBone(visit,extra);
 	}
 }
 
 //we now consider how to write the data to file
-void AniBone::WriteBoneToFile()
+void AniBone::WriteBoneToFile(FILE* pfile)
 {
 	//now we write the basic data
 	int sizeBoneId = sizeof(int);
@@ -186,19 +185,19 @@ void AniBone::WriteBoneToFile()
 	pBoneDataBufferTmp +=sizeChildSize;
 	memcpy(pBoneDataBufferTmp,&m_aniFrameSize,sizeAniFrameSize);
 	pBoneDataBufferTmp +=sizeAniFrameSize;
-	fwrite(&totalBoneDataSize,sizeof(int),1,m_fileWriter);
-	fwrite(pBoneDataBuffer,totalBoneDataSize,1,m_fileWriter);
+	fwrite(&totalBoneDataSize,sizeof(int),1,pfile);
+	fwrite(pBoneDataBuffer,totalBoneDataSize,1,pfile);
 	delete [] pBoneDataBuffer ;
 	//now we write the offset matrix
 	float pMat4Buffer[16];
 	int sizeMat4 = 16*sizeof(float);
 	GetGlmMat4Buffer(m_vertexOffsetMatrix,pMat4Buffer);
-	fwrite(pMat4Buffer,sizeMat4,1,m_fileWriter);
+	fwrite(pMat4Buffer,sizeMat4,1,pfile);
 	//now we write the aniframes
-	WriteAniFrameData();	
+	WriteAniFrameData(pfile);	
 
 }
-void AniBone::WriteAniFrameData()
+void AniBone::WriteAniFrameData(FILE* pfile)
 {
 	int elePerAniStruct = 16*3;
 	float* pAniFrameDataBuffer = new float[elePerAniStruct*m_aniFrameSize];
@@ -210,11 +209,11 @@ void AniBone::WriteAniFrameData()
 		pAniFrameDataBufferTmp = GetGlmMat4Buffer(m_aniFrames[i]->m_outputMatrix,pAniFrameDataBufferTmp);	
 		
 	}
-	fwrite(pAniFrameDataBuffer,sizeof(float)*elePerAniStruct*m_aniFrameSize,1,m_fileWriter);
+	fwrite(pAniFrameDataBuffer,sizeof(float)*elePerAniStruct*m_aniFrameSize,1,pfile);
 	delete [] pAniFrameDataBuffer;
 }
 //not finish yet
-void AniBone::ReadBoneFromFile()
+void AniBone::ReadBoneFromFile(FILE* pfile)
 {
 	int sizeBoneId = sizeof(int);
 	int sizeParentBoneId = sizeof(int);
@@ -230,10 +229,10 @@ void AniBone::ReadBoneFromFile()
 	int sizeAniFrameSize = sizeof(int);
 
 	int totalBoneDataSize =0; 
-	fread(&totalBoneDataSize,sizeof(int),1,m_fileReader);
+	fread(&totalBoneDataSize,sizeof(int),1,pfile);
 	char* pBoneDataBuffer = new char[totalBoneDataSize];
 	char* pBoneDataBufferTmp = pBoneDataBuffer;
-	fread(pBoneDataBuffer,totalBoneDataSize,1,m_fileReader);
+	fread(pBoneDataBuffer,totalBoneDataSize,1,pfile);
 	memcpy(&m_boneId,pBoneDataBufferTmp,sizeBoneId);
 	pBoneDataBufferTmp +=sizeBoneId;
 	memcpy(&m_parentBoneId,pBoneDataBufferTmp,sizeParentBoneId);
@@ -260,18 +259,18 @@ void AniBone::ReadBoneFromFile()
 	//the offset matrix
 	float pMat4Buffer[16];
 	int sizeMat4 = 16*sizeof(float);
-	fread(pMat4Buffer,sizeMat4,1,m_fileReader);
+	fread(pMat4Buffer,sizeMat4,1,pfile);
 	GetGlmMat4FromBuffer(m_vertexOffsetMatrix,pMat4Buffer);
 	//read the aniframes
-	ReadAniFrameData();
+	ReadAniFrameData(pfile);
 }
 //not finish yet
-void AniBone::ReadAniFrameData()
+void AniBone::ReadAniFrameData(FILE* pfile)
 {
 	int elePerAniStruct = 16*3;
 	float* pAniFrameDataBuffer = new float[elePerAniStruct*m_aniFrameSize];
 	float* pAniFrameDataBufferTmp = pAniFrameDataBuffer;
-	fread(pAniFrameDataBuffer,sizeof(float)*elePerAniStruct*m_aniFrameSize,1,m_fileReader);
+	fread(pAniFrameDataBuffer,sizeof(float)*elePerAniStruct*m_aniFrameSize,1,pfile);
 	for(int i=0; i < m_aniFrameSize;++i)
 	{
 		pAniFrameDataBufferTmp = GetGlmMat4FromBuffer(m_aniFrames[i]->m_localMatrix,pAniFrameDataBufferTmp);	
@@ -299,28 +298,29 @@ void AniBone::GenerateAllId()
 {
 	VisitAllBone(VisitGenerateId);
 }
-void AniBone::WriteAllBoneToFile()
+void AniBone::WriteAllBoneToFile(FILE* pfile)
 {
 	//this function must call afeter generateallid!!
-	fwrite(&m_idGenerator,sizeof(m_idGenerator),1,m_fileWriter);
+	fwrite(&m_idGenerator,sizeof(m_idGenerator),1,pfile);
 	VisitAllBone(VisitWriteToFile);
 }
 //not finish yet
-void AniBone::ReadAllBoneFromFile()
+void AniBone::ReadAllBoneFromFile(FILE* pfile)
 {
 	//we first read all the data to memery
-	fread(&m_idGenerator,sizeof(m_idGenerator),1,m_fileReader);
+	fread(&m_idGenerator,sizeof(m_idGenerator),1,pfile);
 	if(m_idGenerator <= 1)
 	{
+		printf("not root bone found error!!!\n");
 		return;
 	}
-	ReadBoneFromFile();//read the root bone
+	ReadBoneFromFile(pfile);//read the root bone
 	
 	//read other data
 	AniBone* pBoneBuffer=new AniBone[m_idGenerator-1];
 	for(int i = 0;i < m_idGenerator-1 ; ++i)
 	{
-		(pBoneBuffer+i)->ReadBoneFromFile();
+		(pBoneBuffer+i)->ReadBoneFromFile(pfile);
 	}
 	//now we build the bone tree!!
 	for(int i = 0;i < m_idGenerator-1 ; ++i)
@@ -344,8 +344,6 @@ void AniBone::InitStaticData()
 {
 	m_idGenerator = 0;
 	m_rootBone =NULL;
-	m_fileReader = NULL;
-	m_fileWriter = NULL;
 		
 }
 
@@ -373,43 +371,7 @@ void AniBone::AddAniMatrix(AniMatrix* pAniMatrix)
 	m_aniFrames.push_back(pAniMatrix);
 }
 
-void AniBone::OpenFileWriter()
-{
-	const char* pFileName ="cheqiAniDatas";
-	m_fileWriter = fopen (pFileName, "wb");
-}
-void AniBone::CloseFileWriter()
-{
-	fclose(m_fileWriter);
-}
-FILE* AniBone::GetFileWriter()
-{
-	return m_fileWriter; 
-}
 
-void AniBone::OpenFileReader()
-{
-	const char* pFileName ="cheqiAniDatas";
-	m_fileReader = fopen (pFileName, "rb");
-}
-void AniBone::CloseFileReader()
-{
-	fclose(m_fileReader);
-}
-FILE* AniBone::GetFileReader()
-{
-	return m_fileReader;
-}
-
-void AniBone::WriteTheHeader(AniDataFileHeader& header)
-{
-	header.headerSize = sizeof(header);
-	fwrite(&header,sizeof(header),1,m_fileWriter);
-}
-void AniBone::ReadTheHeader(AniDataFileHeader& header)
-{
-	fread(&header,sizeof(header),1,m_fileReader);
-}
 AniBone* AniBone::GetRootBone()
 {
 	if(NULL == m_rootBone)
