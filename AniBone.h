@@ -33,8 +33,8 @@ public:
 public:
 	enum VisitTypeEnum {VisitGenerateId=0,VisitWriteToFile,VisitEnd};
 	void GenerateAllId();
-	void WriteAllBoneToFile(FILE* pfile);
-	void ReadAllBoneFromFile(FILE* pfile);
+	void WriteAllBoneToFile(FILE* pfile,AniDataFileHeader& header);
+	void ReadAllBoneFromFile(FILE* pfile,AniDataFileHeader& header);
 	int GetBoneId();
 public:
 	void SetVertexOffsetMatrix(const glm::mat4& mat);

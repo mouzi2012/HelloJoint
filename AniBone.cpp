@@ -298,14 +298,16 @@ void AniBone::GenerateAllId()
 {
 	VisitAllBone(VisitGenerateId);
 }
-void AniBone::WriteAllBoneToFile(FILE* pfile)
+void AniBone::WriteAllBoneToFile(FILE* pfile,AniDataFileHeader& header)
 {
 	//this function must call afeter generateallid!!
+	header.aniBoneStartPosition = ftell(pfile);
 	fwrite(&m_idGenerator,sizeof(m_idGenerator),1,pfile);
-	VisitAllBone(VisitWriteToFile);
+	VisitAllBone(VisitWriteToFile,pfile);
+	header.aniSize = ftell(pfile) - header.aniBoneStartPosition;
 }
 //not finish yet
-void AniBone::ReadAllBoneFromFile(FILE* pfile)
+void AniBone::ReadAllBoneFromFile(FILE* pfile,AniDataFileHeader& header)
 {
 	//we first read all the data to memery
 	fread(&m_idGenerator,sizeof(m_idGenerator),1,pfile);

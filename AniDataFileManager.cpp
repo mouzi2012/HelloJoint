@@ -31,11 +31,25 @@ void AniDataFileManager::CloseFileType(int type)
 
 void AniDataFileManager::WriteDataToFile(AniBone* pBone,AniVertexInfo* pVertexInfo)
 {
-
+	AniDataFileHeader header;
+	FILE* pWriter = m_file[EWriter];
+	//occupy the data first
+	WriteTheHeader(header,pWriter);
+	pVertexInfo->WriteToFile(pWriter,header);
+	pBone->WriteAllBoneToFile(pWriter,header);
+	//write the real data now
+	fseek(pWriter,0,SEEK_SET);
+	WriteTheHeader(header,pWriter);
 }
 void AniDataFileManager::ReadDataFromFile(AniBone*& pBone,AniVertexInfo*& pVertexInfo)
 {
-	
+	AniDataFileHeader header;
+	FILE* pReader = m_file[EReader];
+	ReadTheHeader(header,pReader);	
+	pVertexInfo = new AniVertexInfo;
+	pVertexInfo->ReadFromFile(pReader,header);
+	pBone = AniBone::GetRootBone();
+	pBone->ReadAllBoneFromFile(pReader,header);
 }
 
 void AniDataFileManager::SetFileName(int type,char* name)
