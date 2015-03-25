@@ -1,35 +1,39 @@
 #include "AniDataFileManager.h"
 AniDataFileManager::AniDataFileManager()
 {
-
-	memset(m_nameWriter,0,nSize);
-	memset(m_nameReader,0,nSize);
-	m_fileWriter = NULL;
-	m_fileReader = NULL;
+	memset(m_file,0,sizeof(FILE*)*(EReader+1));
+	memset(m_name,0,sizeof(char)*(EReader+1)*nSize);
 }
 
 AniDataFileManager::~AniDataFileManager()
 {
 }
 
-void AniDataFileManager::OpenFileWriter()
+void AniDataFileManager::OpenFileType(int type)
+{
+	const char* op[] ={"wb","rb"};
+	const char* typeName[] ={"writer","reader"};
+	m_file[type] = fopen(m_name[type],op[type]);
+	if(!m_file[type])
+	{
+		printf("can not open file %s !!!!\n",typeName[type]);
+	}
+}
+
+void AniDataFileManager::CloseFileType(int type)
+{
+	fclose(m_file[type]);
+}
+
+
+void AniDataFileManager::WriteDataToFile(AniBone* pBone,AniVertexInfo* pVertexInfo)
 {
 }
-void AniDataFileManager::CloseFileWriter()
+void AniDataFileManager::ReadDataFromFile(AniBone*& pBone,AniVertexInfo*& pVertexInfo)
 {
 }
 
-void AniDataFileManager::OpenFileReader()
+void AniDataFileManager::SetFileName(int type,char* name)
 {
+	strcpy(m_name[type],name);
 }
-void AniDataFileManager::CloseFileReader()
-{
-}
-
-void AniDataFileManager::WriteDataToFile()
-{
-}
-void AniDataFileManager::ReadDataFromFile()
-{
-}
-

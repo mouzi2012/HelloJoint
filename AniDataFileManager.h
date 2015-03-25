@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+class AniBone;
+class AniVertexInfo;
 class AniDataFileManager
 {
 public:
@@ -11,20 +13,17 @@ public:
 	~AniDataFileManager();
 
 public:
-	void OpenFileWriter();
-	void CloseFileWriter();
-
-	void OpenFileReader();
-	void CloseFileReader();
-
-	void WriteDataToFile();
-	void ReadDataFromFile();
-
+	void SetFileName(int type,char* name);
+public:
+	void WriteDataToFile(AniBone* pBone,AniVertexInfo* pVertexInfo);
+	void ReadDataFromFile(AniBone*& pBone,AniVertexInfo*& pVertexInfo);
+	
+	void OpenFileType(int type);
+	void CloseFileType(int type);
 private:
+	enum EManagerType {EWriter=0,EReader};
 	static const int nSize=256;
-	char m_nameWriter[nSize];
-	char m_nameReader[nSize];
-	FILE* m_fileWriter;
-	FILE* m_fileReader;
+	FILE* m_file[EReader+1];
+	char m_name[EReader+1][nSize];
 };
 #endif
