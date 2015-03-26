@@ -14,7 +14,7 @@ public:
 	~AniDataFileManager();
 
 public:
-	void SetFileName(int type,char* name);
+	void SetFileName(int type,const char* name);
 public:
 	void WriteDataToFile(AniBone* pBone,AniVertexInfo* pVertexInfo);
 	void ReadDataFromFile(AniBone*& pBone,AniVertexInfo*& pVertexInfo);

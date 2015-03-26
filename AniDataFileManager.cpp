@@ -52,7 +52,7 @@ void AniDataFileManager::ReadDataFromFile(AniBone*& pBone,AniVertexInfo*& pVerte
 	pBone->ReadAllBoneFromFile(pReader,header);
 }
 
-void AniDataFileManager::SetFileName(int type,char* name)
+void AniDataFileManager::SetFileName(int type,const char* name)
 {
 	strcpy(m_name[type],name);
 }

@@ -8,6 +8,8 @@ using std::vector;
 #define NAMEL 256
 class AniBone;
 class AniMaterial;
+class AniDataFileManager;
+
 struct AniVertexInfo;
 
 struct Index2Bone
@@ -25,6 +27,7 @@ public:
 	void SetTarget(const char* name);
 	void InitFbxData();
 	void StartParse();
+	void WriteToFile(AniDataFileManager& manager);
 protected:
 	void ParseBone();
 	void ParseVertex();

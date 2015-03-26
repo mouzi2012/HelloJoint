@@ -2,6 +2,8 @@
 #include "AniBone.h"
 #include "AniMaterial.h"
 #include "AniVertex.h"
+#include "AniDataFileManager.h"
+
 FbxAMatrix GetGeometry(FbxNode* pNode)
 {
 	const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
@@ -460,4 +462,8 @@ void DataReader::ParseMaterial()
 		m_vertexInfo->AddMaterial(pMaterial);
 	}   
 
+}
+void DataReader::WriteToFile(AniDataFileManager& manager)
+{
+	manager.WriteDataToFile(m_bone,m_vertexInfo);
 }
